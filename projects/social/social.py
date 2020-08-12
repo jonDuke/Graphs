@@ -1,4 +1,5 @@
 import random
+import numpy as np
 from collections import deque
 
 class User:
@@ -49,20 +50,56 @@ class SocialGraph:
         # Add users
         for i in range(num_users):
             self.add_user(f"User {i+1}")
+
+        # O(n) solution
         
-        # Generate all possible friendships combinations
-        # Avoid duplicates by ensuring 1st < 2nd
-        possible = []
-        for user_id in self.users:
-            for friend_id in range(user_id+1, self.last_id+1):
-                possible.append((user_id, friend_id))
+        # Generate the number of friends each user will have
+        # Uses a normal distribution to keep the average correct
+        # The scale parameter is standard deviation
+        friend_counts = np.random.normal(loc=avg_friendships,
+                                         scale=avg_friendships/2,
+                                         size=num_users)
+        friend_counts = friend_counts.astype(int)
 
-        # Shuffle friendships
-        random.shuffle(possible)
+        # The set of all users, used in the next loop
+        all_users = set(self.users.keys())
 
-        # Create N friendships, where N = num_users * avg_friendships / 2
-        for i in range(num_users * avg_friendships // 2):
-            self.add_friendship(*possible[i])
+        # Generate the given number of friends for each user
+        for u in all_users:
+            # Check if enough friendships have already been made with this user
+            count = friend_counts[u-1] - len(self.friendships[u])
+            if count <= 0:
+                continue
+
+            # Get set of possible friends for this user
+            possible = all_users.copy()
+            possible.remove(u)
+
+            # remove the friendships already made with this user
+            possible = possible.difference(self.friendships[u])
+
+            # Pick a random sample of those possible friends
+            friends = random.sample(possible, count)
+
+            # Create that those friendships
+            for f in friends:
+                self.add_friendship(u, f)
+
+        # Original O(n^2) solution
+
+        # # Generate all possible friendships combinations
+        # # Avoid duplicates by ensuring 1st < 2nd
+        # possible = []
+        # for user_id in self.users:
+        #     for friend_id in range(user_id+1, self.last_id+1):
+        #         possible.append((user_id, friend_id))
+
+        # # Shuffle friendships
+        # random.shuffle(possible)
+
+        # # Create N friendships, where N = num_users * avg_friendships / 2
+        # for i in range(num_users * avg_friendships // 2):
+        #     self.add_friendship(*possible[i])
 
     def get_all_social_paths(self, user_id):
         """
