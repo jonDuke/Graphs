@@ -19,6 +19,9 @@ def find_deepest(graph, starting_node, depth=0):
             # save the deepest ancestor result found
             deepest = result[1]
             found = result[0]
+        elif result[1] == deepest and found > result[0]:
+            # same depth, but make sure we get lower parent id
+            found = result[0]
 
     return found, deepest
 
